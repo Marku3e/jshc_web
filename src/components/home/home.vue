@@ -1,44 +1,45 @@
 <template>
-  <div id="home">
-    <comHeader></comHeader>
+  <div id="home" @touchmove="touch($event)">
+    <comHeader v-on:openPopup="openPopup"></comHeader>
     <div class="banner">
       <mt-swipe :auto="5000">
         <mt-swipe-item><img src="../../assets/images/home/1/b@2x.png"></mt-swipe-item>
         <mt-swipe-item><img src="../../assets/images/home/1/b@2x.png"></mt-swipe-item>
-        <mt-swipe-item><img src="../../assets/images/home/1/b@2x.png"></mt-swipe-item>
+        <mt-swipe-item v-for="(banner,index) in bannerList" :key="index"><img :src="banner.image"></mt-swipe-item>
       </mt-swipe>
     </div>
     <div class="menu">
-      <div class="menu-list">
+      <!--<router-link :to="'/helpMe'" class="menu-list">-->
+      <router-link :to="'/helpMe'" class="menu-list">
         <div class="menu-img">
           <img src="../../assets/images/home/2/bangwozhaoche@2x.png" alt="">
         </div>
         <p>帮我选车</p>
-      </div>
-      <div class="menu-list">
+      </router-link>
+      <router-link class="menu-list" :to="'/car/'+'newcar'">
         <div class="menu-img">
           <img src="../../assets/images/home/2/car@2x.png" alt="">
         </div>
         <p>提新车</p>
-      </div>
-      <div class="menu-list">
+      </router-link>
+      <router-link class="menu-list" :to="'/car/'+'usedcar'">
         <div class="menu-img">
           <img src="../../assets/images/home/2/ershouche@2x.png" alt="">
         </div>
         <p>提好车</p>
-      </div>
-      <div class="menu-list">
+      </router-link>
+      <div class="menu-list" @click="lowFirstPay()">
         <div class="menu-img">
           <img src="../../assets/images/home/2/zhifu@2x.png" alt="">
         </div>
         <p>低首付</p>
       </div>
-      <div class="menu-list">
+      <router-link :to="'/service'" class="menu-list">
         <div class="menu-img">
           <img src="../../assets/images/home/2/fuwu@2x.png" alt="">
         </div>
         <p>服务保障</p>
-      </div>
+      </router-link>
     </div>
     <div class="bb"></div>
     <div class="newcar-list">
@@ -94,8 +95,8 @@
         <li class="carSearch">准新车</li>
         <li class="carSearch">九成新</li>
         <li class="carSearch">八成新</li>
-        <li class="carSearch">五千公里以内</li>
-        <li class="carSearch">五千公里以上</li>
+        <li class="carSearch">里程较少</li>
+        <li class="carSearch">里程较多</li>
         <li class="carSearch">车况优秀</li>
         <li class="carSearch">车况良好</li>
         <li class="carSearch">车况一般</li>
@@ -153,7 +154,7 @@
         <li class='car-list' v-for='item in carList'>
           <div class="sale">
             <p>首付</p>
-            <p>2%</p>
+            <p>{{item.sale}}%</p>
           </div>
           <img src="../../assets/images/home/4/usedcar@2x.png" alt="">
           <p class="name">{{item.name}}</p>
@@ -174,12 +175,13 @@
       <div class="ewm-img"></div>
       <p>扫码下载APP</p>
     </div>
-
   </div>
 </template>
 
 <script>
-  import comHeader from '../common/com_header'
+  import comHeader from '../common/comHeader'
+  import {mapState} from 'vuex'
+  import Bus from '../common/bus'
 
   export default {
     name: "home",
@@ -188,15 +190,68 @@
     },
     data() {
       return {
+        isOpen: false,
         carList: [
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png"},
-        ]
+          {name: '别克英朗', money: '1.1', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png", sale: '1'},
+          {name: '别克英朗', money: '1.2', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png", sale: '2'},
+          {name: '别克英朗', money: '1.3', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png", sale: '3'},
+          {name: '别克英朗', money: '1.4', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png", sale: '4'},
+          {name: '别克英朗', money: '1.5', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png", sale: '5'},
+          // {name: '别克英朗', money: '1.6', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png",sale:'6'},
+          // {name: '别克英朗', money: '1.7', monthPay: '3000', images: "/src/assets/images/home/4/usedcar@2x.png",sale:'7'},
+        ],
+        bannerList: [],
+        newcarSaleList: [],
+        usedcarSaleList: [],
+      }
+    },
+    computed: {
+      ...mapState({
+        filter: state => state.filterData.filter,
+        defList: state => state.filterData.defList,
+      })
+    },
+    mounted() {
+      //banner
+      this.getBannerImg('0')
+    },
+    methods: {
+      touch: function (event) {
+        if (this.isOpen) {
+          event.preventDefault()
+        }
+      },
+      openPopup: function (data) {
+        // console.log(data);
+        this.isOpen = data
+
+      },
+      lowFirstPay: function () {
+        let obj = {'value': '4', 'text': '首付最低', 'icon': 'icon-duigou', 'active': false, 'carType': 'newcar'}
+        this.defList.forEach((v, i) => {
+          v.active = false
+        })
+        this.defList[5].active = true
+        this.$store.commit('changeDef', obj.value)
+        Bus.$emit('changedDef', obj.text)
+        this.filter[0].text = obj.text
+        this.$router.push({path: '/car/usedcar'})
+      },
+      getBannerImg: function (type) {
+        let that = this
+        let url = this.$com.baseUrl + '/wx/car/getSortByType'
+        this.$com.api(url, {'type': type}, (res) => {
+          console.log(res);
+          if (res.res_code == '0000') {
+            if (type == '0') {
+              that.bannerList = res.data
+            } else if (type == '1') {
+              that.newcarSaleList = res.data
+            } else if (type == '2') {
+              that.usedcarSaleList = res.data
+            }
+          }
+        })
       }
     }
   }
@@ -210,6 +265,7 @@
       height: 2.1rem;
       img {
         height: 2.1rem;
+        width: 100%;
       }
     }
     .menu {
